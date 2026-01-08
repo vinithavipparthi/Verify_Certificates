@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMDOX | Certificate Verification System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        .page { display: none; }
+        .page-active { display: block; animation: fadeIn 0.5s ease; }
+        .cert-card { background: white; border: 20px solid #1e3a8a; position: relative; overflow: hidden; }
+        .moving-gradient { background: linear-gradient(270deg, #1e3a8a, #3b82f6); background-size: 400% 400%; animation: gradShift 10s ease infinite; }
+        @keyframes gradShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans">
+
+    <nav class="bg-white border-b px-8 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-blue-900 rounded-lg"></div>
+            <span class="text-2xl font-black text-blue-900 tracking-tighter">AMDOX</span>
+        </div>
+        <div class="flex gap-6 font-bold text-sm">
+            <button onclick="showPage('user-portal')" class="text-blue-600 hover:underline">Verification Portal</button>
+            <button onclick="showPage('admin-login')" class="text-slate-500 hover:text-blue-900">Admin Access</button>
+        </div>
+    </nav>
+
+    <section id="user-portal" class="page page-active py-16 px-6">
+        <div class="max-w-3xl mx-auto text-center animate__animated animate__fadeIn">
+            <h2 class="text-4xl font-black mb-4">Verify Your Internship [cite: 32]</h2>
+            <p class="text-slate-500 mb-10">Enter your Certificate ID to retrieve your pre-filled internship details. </p>
+            
+            <div class="bg-white p-3 rounded-2xl shadow-2xl flex gap-3 border border-slate-200">
+                <input type="text" id="search-id" placeholder="Ex: AMD-INT-2026-01" class="flex-1 p-4 outline-none font-bold text-lg">
+                <button onclick="verifyCertificate()" class="bg-blue-900 text-white px-10 py-4 rounded-xl font-bold hover:bg-blue-800 transition">Search ID </button>
+            </div>
+        </div>
+
+        <div id="cert-output-area" class="hidden mt-16 animate__animated animate__zoomIn">
+            <div id="capture-area" class="max-w-4xl mx-auto cert-card p-12 text-center shadow-2xl">
+                <div class="absolute top-0 right-0 p-4 font-mono text-[8px] opacity-20">AUTHENTIC AMDOX SECURE</div>
+                <h1 class="text-5xl font-serif text-blue-900 mb-2 italic">Certificate [cite: 33]</h1>
+                <p class="tracking-[0.5em] text-slate-400 font-bold text-xs mb-10">OF INTERNSHIP COMPLETION</p>
+                
+                <p class="italic text-slate-600 mb-4">This document confirms that</p>
+                <h2 id="view-name" class="text-4xl font-bold text-blue-800 border-b-2 border-slate-100 inline-block px-12 mb-8">STUDENT NAME [cite: 50]</h2>
+                
+                <p class="text-xl leading-relaxed max-w-2xl mx-auto mb-12 text-slate-700">
+                    has successfully completed an internship in <b id="view-domain">Domain </b> 
+                    starting from <span id="view-start">Start</span> to <span id="view-end">End </span>.
+                </p>
+
+                <div class="flex justify-between items-end mt-12 px-10">
+                    <div class="text-left">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase">Verification ID </p>
+                        <p id="view-id" class="font-mono font-bold text-blue-900">AMD-XXX-000</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="w-32 h-0.5 bg-slate-300 mb-2"></div>
+                        <p class="font-bold text-sm">Authorized Official [cite: 57]</p>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-10">
+                <button onclick="downloadPDF()" class="bg-green-600 text-white px-12 py-4 rounded-full font-bold shadow-lg hover:bg-green-700 transition">Download as PDF </button>
+            </div>
+        </div>
+    </section>
+
+    <section id="admin-login" class="page py-20 px-6">
+        <div class="max-w-md mx-auto bg-white p-10 rounded-3xl shadow-2xl border border-slate-100">
+            <h2 class="text-2xl font-black mb-6">Admin Access Portal </h2>
+            <form onsubmit="handleAdminLogin(event)" class="space-y-4">
+                <input type="password" id="admin-key" placeholder="Enter Admin Password" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none" required>
+                <button class="w-full bg-blue-900 text-white py-4 rounded-2xl font-bold">Login to Admin </button>
+            </form>
+        </div>
+    </section>
+
+    <section id="admin-dashboard" class="page py-10 px-8 max-w-7xl mx-auto">
+        <div class="flex justify-between items-center mb-10">
+            <h2 class="text-3xl font-black">Data Management Dashboard [cite: 46]</h2>
+            <button onclick="logout()" class="text-red-500 font-bold">Logout [cite: 45]</button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <div class="bg-white p-8 rounded-[2rem] border shadow-sm">
+                <h3 class="font-bold text-xl mb-4">Bulk Student Upload </h3>
+                <p class="text-xs text-slate-400 mb-4 italic">Format: ID, Name, Domain, StartDate, EndDate (One per line)</p>
+                <textarea id="csv-input" rows="6" placeholder="AMD-01, John Doe, Web Dev, 01/26, 02/26" class="w-full p-4 bg-slate-50 border rounded-2xl font-mono text-sm mb-4 outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                <button onclick="uploadData()" class="w-full bg-blue-700 text-white py-4 rounded-2xl font-bold shadow-lg shadow-blue-100 hover:bg-blue-800 transition">Sync to MongoDB (Local) [cite: 48]</button>
+            </div>
+
+            <div class="moving-gradient text-white p-10 rounded-[2rem] shadow-xl flex flex-col justify-center">
+                <p class="text-xs font-bold uppercase opacity-70 mb-2">Total Certificates Issued </p>
+                <h1 id="total-count" class="text-7xl font-black">0</h1>
+                <div class="mt-8 flex gap-4">
+                    <div class="bg-white/10 p-4 rounded-xl flex-1">
+                        <p class="text-[10px] font-bold uppercase">System Status</p>
+                        <p class="font-bold">Active </p>
+                    </div>
+                    <div class="bg-white/10 p-4 rounded-xl flex-1">
+                        <p class="text-[10px] font-bold uppercase">Security</p>
+                        <p class="font-bold">Encrypted [cite: 57]</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // PAGE NAVIGATION
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('page-active'));
+            document.getElementById(id).classList.add('page-active');
+            window.scrollTo(0,0);
+        }
+
+        // ADMIN MANAGEMENT [cite: 42, 43]
+        function handleAdminLogin(e) {
+            e.preventDefault();
+            const key = document.getElementById('admin-key').value;
+            if(key === "admin123") { // Secure access simulation [cite: 57]
+                showPage('admin-dashboard');
+                updateCount();
+            } else {
+                alert("Invalid Admin Credentials!");
+            }
+        }
+
+        // DATA MANAGEMENT (BULK UPLOAD) [cite: 46, 47]
+        function uploadData() {
+            const input = document.getElementById('csv-input').value;
+            const rows = input.split('\n');
+            let db = JSON.parse(localStorage.getItem('mongoDB')) || [];
+            let validRows = 0;
+
+            rows.forEach(row => {
+                const parts = row.split(',');
+                if(parts.length === 5) { // Validation check 
+                    db.push({
+                        id: parts[0].trim(),
+                        name: parts[1].trim(),
+                        domain: parts[2].trim(),
+                        start: parts[3].trim(),
+                        end: parts[4].trim()
+                    });
+                    validRows++;
+                }
+            });
+
+            localStorage.setItem('mongoDB', JSON.stringify(db));
+            alert(`Sync Successful! ${validRows} records added to Database.`);
+            document.getElementById('csv-input').value = '';
+            updateCount();
+        }
+
+        function updateCount() {
+            const db = JSON.parse(localStorage.getItem('mongoDB')) || [];
+            document.getElementById('total-count').innerText = db.length;
+        }
+
+        // CERTIFICATE VERIFICATION [cite: 52, 53]
+        function verifyCertificate() {
+            const searchId = document.getElementById('search-id').value;
+            const db = JSON.parse(localStorage.getItem('mongoDB')) || [];
+            const student = db.find(s => s.id === searchId);
+
+            if(student) {
+                // Populate certificate [cite: 50, 51]
+                document.getElementById('view-name').innerText = student.name;
+                document.getElementById('view-domain').innerText = student.domain;
+                document.getElementById('view-start').innerText = student.start;
+                document.getElementById('view-end').innerText = student.end;
+                document.getElementById('view-id').innerText = student.id;
+                
+                document.getElementById('cert-output-area').classList.remove('hidden');
+                document.getElementById('cert-output-area').scrollIntoView({behavior: 'smooth'});
+            } else {
+                alert("Certificate ID not found! Ensure the ID is correct.");
+                document.getElementById('cert-output-area').classList.add('hidden');
+            }
+        }
+
+        // CERTIFICATE DOWNLOAD (PDF) [cite: 54, 55]
+        function downloadPDF() {
+            const element = document.getElementById('capture-area');
+            const opt = {
+                margin: 0,
+                filename: 'Internship_Certificate.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 3 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+
+        function logout() { location.reload(); }
+    </script>
+</body>
+</html>
